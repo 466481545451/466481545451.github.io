@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes">
+    <title>SL Bypass</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            background: linear-gradient(135deg, #0b0b0f 0%, #1a1a2e 100%);
+            font-family: 'Segoe UI', 'Arial', sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px;
+            color: #e0e0e0;
+        }
+        .card {
+            background: rgba(255, 255, 255, 0.04);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 32px;
+            padding: 40px 32px;
+            width: 100%;
+            max-width: 500px;
+            box-shadow: 0 25px 50px rgba(0, 0, 0, 0.6), 0 0 80px rgba(0, 180, 216, 0.15);
+            text-align: center;
+            transition: all 0.3s ease;
+        }
+        .brand {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            margin-bottom: 28px;
+        }
+        .brand-icon {
+            width: 52px;
+            height: 52px;
+            background: linear-gradient(135deg, #00b4d8, #0077b6);
+            border-radius: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 10px 25px rgba(0, 180, 216, 0.4);
+            font-size: 28px;
+            font-weight: 900;
+            color: white;
+        }
+        .brand-text {
+            font-size: 26px;
+            font-weight: 700;
+            background: linear-gradient(90deg, #00b4d8, #48cae4);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            letter-spacing: -0.5px;
+        }
+        .subtitle {
+            color: #a0a0b0;
+            font-size: 14px;
+            margin-bottom: 32px;
+            letter-spacing: 1px;
+        }
+        .input-group {
+            margin-bottom: 28px;
+            text-align: left;
+        }
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            font-size: 14px;
+            color: #b0b0c0;
+            letter-spacing: 0.5px;
+        }
+        textarea, input[type="text"] {
+            width: 100%;
+            padding: 14px 16px;
+            border-radius: 16px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            background: rgba(255, 255, 255, 0.05);
+            color: #ffffff;
+            font-size: 15px;
+            resize: vertical;
+            outline: none;
+            transition: all 0.2s;
+            font-family: inherit;
+        }
+        textarea:focus, input[type="text"]:focus {
+            border-color: #00b4d8;
+            box-shadow: 0 0 20px rgba(0, 180, 216, 0.2);
+            background: rgba(255, 255, 255, 0.08);
+        }
+        textarea {
+            min-height: 100px;
+        }
+        .turnstile-wrapper {
+            margin-bottom: 20px;
+            display: flex;
+            justify-content: center;
+        }
+        .btn {
+            width: 100%;
+            padding: 16px;
+            border: none;
+            border-radius: 20px;
+            background: linear-gradient(135deg, #00b4d8, #0077b6);
+            color: white;
+            font-size: 18px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.2s;
+            letter-spacing: 1px;
+            box-shadow: 0 15px 30px rgba(0, 119, 182, 0.4);
+            margin-bottom: 24px;
+        }
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 20px 40px rgba(0, 180, 216, 0.5);
+        }
+        .btn:disabled {
+            background: #2a2a3a;
+            box-shadow: none;
+            transform: none;
+            cursor: wait;
+            opacity: 0.7;
+        }
+        .result-box {
+            text-align: left;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 16px;
+            padding: 20px;
+            margin-top: 20px;
+            word-break: break-all;
+            font-family: 'SF Mono', 'Fira Code', monospace;
+            font-size: 13px;
+            color: #d0d0e0;
+            display: none;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        .success { color: #4caf50; font-weight: bold; }
+        .error { color: #ff6b6b; font-weight: bold; }
+        .time { color: #aaa; font-size: 12px; margin-top: 8px; }
+        .footer {
+            margin-top: 30px;
+            font-size: 12px;
+            color: #606070;
+            text-align: center;
+        }
+        .loading-spinner {
+            display: inline-block;
+            width: 24px;
+            height: 24px;
+            border: 3px solid rgba(255,255,255,0.2);
+            border-top-color: #00b4d8;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+            vertical-align: middle;
+            margin-right: 8px;
+        }
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        .flex-center {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+    </style>
+    <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
+</head>
+<body>
+    <div class="card">
+        <div class="brand">
+            <div class="brand-icon">SL</div>
+            <div class="brand-text">SL Bypass</div>
+        </div>
+        <div class="subtitle">SL 绕过</div>
+
+        <div class="input-group">
+            <label for="targetUrl">Delta链接</label>
+            <input type="text" id="targetUrl" placeholder="https://auth.platorelay.com/a?d=xxxx" autocomplete="off">
+        </div>
+
+        <div class="turnstile-wrapper">
+            <div class="cf-turnstile" data-sitekey="0x4AAAAAADdoklioyz3Flc1KFxVdNTAR8oQ" data-callback="onTurnstileSuccess"></div>
+        </div>
+
+        <button id="bypassBtn" class="btn" onclick="startBypass()">
+            开始绕过
+        </button>
+
+        <div class="result-box" id="resultBox"></div>
+
+        <div class="footer">
+            7891<br>
+            7891
+        </div>
+    </div>
+
+    <script>
+        const WORKER_URL = 'https://tiny-hall-025e.339629740.workers.dev/tf/api/bypass';
+        const DEFAULT_API_KEY = 'api-keyA1B2C3D4E5F6G7H8-000001';
+        let turnstileToken = null;
+
+        const resultBox = document.getElementById('resultBox');
+        const bypassBtn = document.getElementById('bypassBtn');
+        const targetInput = document.getElementById('targetUrl');
+
+        window.onTurnstileSuccess = function(token) {
+            turnstileToken = token;
+        };
+
+        function resetTurnstile() {
+            if (window.turnstile) {
+                window.turnstile.reset();
+            }
+            turnstileToken = null;
+        }
+
+        function showResult(html) {
+            resultBox.innerHTML = html;
+            resultBox.style.display = 'block';
+        }
+
+        function clearResult() {
+            resultBox.style.display = 'none';
+        }
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        async function startBypass() {
+            const url = targetInput.value.trim();
+            if (!url) {
+                showResult('<span class="error">❌ 请输入忍者链接</span>');
+                return;
+            }
+            if (!turnstileToken) {
+                showResult('<span class="error">⚠️ 请先完成 Turnstile 验证（点击“我不是机器人”）</span>');
+                return;
+            }
+
+            try {
+                new URL(url);
+            } catch (e) {
+                showResult('<span class="error">❌ 链接格式不正确</span>');
+                return;
+            }
+
+            bypassBtn.disabled = true;
+            bypassBtn.innerHTML = '<span class="loading-spinner"></span>正在解析...';
+            clearResult();
+
+            const startTime = performance.now();
+
+            try {
+                const payload = {
+                    api_key: DEFAULT_API_KEY,
+                    url: url,
+                    turnstile_token: turnstileToken
+                };
+
+                const response = await fetch(WORKER_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+
+                const data = await response.json();
+                const elapsed = ((performance.now() - startTime) / 1000).toFixed(3);
+
+                if (data.status === 'success' && data.result) {
+                    const key = data.result;
+                    const lowerKey = key.toLowerCase();
+                    if (lowerKey.includes('session expired') || lowerKey.includes('expired link')) {
+                        showResult(`
+                            <div class="error">❌ 链接已过期，请获取新的忍者链接</div>
+                            <div class="time">解析用时: ${elapsed}s</div>
+                        `);
+                    } else if (lowerKey.includes('no message provided') || lowerKey.includes('invalid link')) {
+                        showResult(`
+                            <div class="error">❌ 链接已失效，请重新获取忍者链接</div>
+                            <div class="time">解卡时间: ${elapsed}s</div>
+                        `);
+                    } else {
+                        showResult(`
+                            <div class="success">✅ 解卡成功！</div>
+                            <div style="margin-top:12px; background:rgba(0,180,216,0.1); padding:12px; border-radius:10px;">
+                                ${escapeHtml(key)}
+                            </div>
+                            <div class="time">解卡时间: ${elapsed}s</div>
+                        `);
+                    }
+                } else {
+                    let message = data.message || '未知错误';
+                    if (data.error === 'turnstile_verify_failed') {
+                        message = '验证失败，请刷新页面重试';
+                        resetTurnstile();
+                    }
+                    showResult(`
+                        <div class="error">❌ 解卡失败: ${escapeHtml(message)}</div>
+                        <div class="time">解卡时间: ${elapsed}s</div>
+                    `);
+                }
+            } catch (error) {
+                const elapsed = ((performance.now() - startTime) / 1000).toFixed(3);
+                showResult(`
+                    <div class="error">❌ 网络错误或api无响应</div>
+                    <div style="margin-top:8px; font-size:12px; color:#aaa;">${escapeHtml(error.message)}</div>
+                    <div class="time">耗时: ${elapsed}s</div>
+                `);
+            } finally {
+                bypassBtn.disabled = false;
+                bypassBtn.innerHTML = '开始绕过';
+                resetTurnstile();
+            }
+        }
+
+        targetInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+                startBypass();
+            }
+        });
+    </script>
+</body>
+</html>
