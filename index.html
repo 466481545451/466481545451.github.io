@@ -170,11 +170,6 @@
         @keyframes spin {
             to { transform: rotate(360deg); }
         }
-        .flex-center {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
         .debug-box {
             background: #1e1e2a;
             border-left: 4px solid #ff6b6b;
@@ -192,7 +187,6 @@
             color: #a5d6a7;
         }
     </style>
-    <!-- 修改点：去掉了 async 和 defer 属性 -->
     <script src="https://challenges.cloudflare.com/turnstile/v0/api.js"></script>
 </head>
 <body>
@@ -209,7 +203,7 @@
         </div>
 
         <div class="turnstile-wrapper">
-            <div class="cf-turnstile" data-sitekey="0x4AAAAAADdoklioyz3Flc1KFxVdNTAR8oQ" data-callback="onTurnstileSuccess"></div>
+            <div class="cf-turnstile" data-sitekey="0x4AAAAAADd32DaCqVylLZly" data-callback="onTurnstileSuccess"></div>
         </div>
 
         <div id="turnstileDebug" class="debug-box">🔍 Turnstile 诊断报告 (自动生成)<br></div>
