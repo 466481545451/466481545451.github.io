@@ -166,8 +166,116 @@
         @keyframes spin {
             to { transform: rotate(360deg); }
         }
+        .block-message {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: black;
+            color: red;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+            z-index: 99999;
+            font-size: 24px;
+            text-align: center;
+            backdrop-filter: blur(20px);
+        }
     </style>
     <script src="https://challenges.cloudflare.com/turnstile/v0/api.js"></script>
+    <script>
+        (function antiBot() {
+            var blocked = false;
+            var errorMsg = '检测到前端开源工具，访问已被阻止\\n请关闭前端开源工具后重试';
+
+            function block() {
+                if (blocked) return;
+                blocked = true;
+                document.body.innerHTML = '<div class="block-message"><h1>⚠️访问被拒绝</h1><p>' + errorMsg + '</p></div>';
+                document.body.style.overflow = 'hidden';
+                document.addEventListener('click', function(e) { e.preventDefault(); e.stopPropagation(); }, true);
+                document.addEventListener('keydown', function(e) { e.preventDefault(); e.stopPropagation(); }, true);
+                setInterval(function() {
+                    console.clear();
+                }, 100);
+            }
+
+            var element = new Image();
+            Object.defineProperty(element, 'id', {
+                get: function() {
+                    block();
+                    return ' ';
+                }
+            });
+            console.log(element);
+
+            var isHeadless = (navigator.webdriver === true) ||
+                             (navigator.plugins.length === 0 && navigator.languages === '') ||
+                             (navigator.userAgent.includes('Headless')) ||
+                             (window.callPhantom) ||
+                             (window._phantom) ||
+                             (window.__phantomas) ||
+                             (navigator.userAgent.includes('PhantomJS')) ||
+                             (navigator.userAgent.includes('Puppeteer'));
+            if (isHeadless) {
+                block();
+            }
+
+            if (window.domAutomation || window.domAutomationController || window.webdriver || window.__webdriver_evaluate) {
+                block();
+            }
+
+            try {
+                if (window.self !== window.top) {
+                    block();
+                }
+            } catch(e) {}
+
+            document.addEventListener('contextmenu', function(e) {
+                e.preventDefault();
+                block();
+                return false;
+            });
+            document.addEventListener('keydown', function(e) {
+                if (e.key === 'F12' || 
+                    (e.ctrlKey && e.shiftKey && (e.key === 'I' || e.key === 'J' || e.key === 'C')) ||
+                    (e.ctrlKey && e.key === 'U') ||
+                    (e.ctrlKey && e.shiftKey && e.key === 'K')) {
+                    e.preventDefault();
+                    block();
+                }
+            });
+
+            var checkDebugger = function() {
+                var d = new Date();
+                debugger;
+                var now = new Date();
+                if (now - d > 100) {
+                    block();
+                }
+            };
+            setInterval(checkDebugger, 2000);
+
+            document.addEventListener('copy', function(e) {
+                block();
+            });
+            document.addEventListener('cut', function(e) {
+                block();
+            });
+
+            var observer = new MutationObserver(function(mutations) {
+                mutations.forEach(function(mutation) {
+                    if (mutation.type === 'childList' && mutation.target.id === 'targetUrl') {
+                    } else {
+                        block();
+                    }
+                });
+            });
+            observer.observe(document.documentElement, { childList: true, subtree: true });
+        })();
+    </script>
 </head>
 <body>
     <div class="card">
@@ -236,18 +344,18 @@
         async function startBypass() {
             const url = targetInput.value.trim();
             if (!url) {
-                showResult('<span class="error">❌ 请输入忍者链接</span>');
+                showResult('<span class="error">请输入忍者链接</span>');
                 return;
             }
             if (!turnstileToken) {
-                showResult('<span class="error">⚠️ 请先完成Cloudflare验证（点击人机验证的小方框如果没有请等待一会”）</span>');
+                showResult('<span class="error">请先完成cloudflare验证（点击小方框如果没有请等待）</span>');
                 return;
             }
 
             try {
                 new URL(url);
             } catch (e) {
-                showResult('<span class="error">链接格式不对</span>');
+                showResult('<span class="error">链接格式不正确</span>');
                 return;
             }
 
@@ -278,12 +386,12 @@
                     const lowerKey = key.toLowerCase();
                     if (lowerKey.includes('session expired') || lowerKey.includes('expired link')) {
                         showResult(`
-                            <div class="error">链接已过期，请获取新的忍者链接</div>
+                            <div class="error">❌ 链接已过期，请获取新的忍者链接</div>
                             <div class="time">解析用时: ${elapsed}s</div>
                         `);
                     } else if (lowerKey.includes('no message provided') || lowerKey.includes('invalid link')) {
                         showResult(`
-                            <div class="error">链接已失效，请重新获取忍者链接</div>
+                            <div class="error">❌ 链接已失效，请重新获取忍者链接</div>
                             <div class="time">解卡时间: ${elapsed}s</div>
                         `);
                     } else {
@@ -298,7 +406,7 @@
                 } else {
                     let message = data.message || '未知错误';
                     if (data.error === 'turnstile_verify_failed') {
-                        message = 'CloudFlare验证失败，请刷新页面重试';
+                        message = 'cloudflare验证失败，请刷新页面重试';
                         resetTurnstile();
                     }
                     showResult(`
@@ -315,7 +423,7 @@
                 `);
             } finally {
                 bypassBtn.disabled = false;
-                bypassBtn.innerHTML = '绕过';
+                bypassBtn.innerHTML = '开始绕过';
                 resetTurnstile();
             }
         }
