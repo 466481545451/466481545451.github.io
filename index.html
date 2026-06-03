@@ -102,6 +102,58 @@
             display: flex;
             justify-content: center;
         }
+        .switch-wrapper {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 20px;
+            background: rgba(255,255,255,0.05);
+            padding: 12px 16px;
+            border-radius: 20px;
+        }
+        .switch-label {
+            font-size: 14px;
+            color: #b0b0c0;
+        }
+        .switch {
+            position: relative;
+            display: inline-block;
+            width: 52px;
+            height: 26px;
+        }
+        .switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #2a2a3a;
+            transition: 0.3s;
+            border-radius: 26px;
+        }
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 20px;
+            width: 20px;
+            left: 3px;
+            bottom: 3px;
+            background-color: white;
+            transition: 0.3s;
+            border-radius: 50%;
+        }
+        input:checked + .slider {
+            background-color: #00b4d8;
+        }
+        input:checked + .slider:before {
+            transform: translateX(26px);
+        }
         .btn {
             width: 100%;
             padding: 16px;
@@ -166,273 +218,193 @@
         @keyframes spin {
             to { transform: rotate(360deg); }
         }
-        .block-message {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: black;
-            color: red;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            flex-direction: column;
-            z-index: 99999;
-            font-size: 24px;
-            text-align: center;
-            backdrop-filter: blur(20px);
-        }
     </style>
-    <script src="https://challenges.cloudflare.com/turnstile/v0/api.js"></script>
-    <script>
-        (function antiBot() {
-            var blocked = false;
-            var errorMsg = '检测到前端开源工具，访问已被阻止\\n请关闭前端开源工具后重试';
-
-            function block() {
-                if (blocked) return;
-                blocked = true;
-                document.body.innerHTML = '<div class="block-message"><h1>⚠️访问被拒绝</h1><p>' + errorMsg + '</p></div>';
-                document.body.style.overflow = 'hidden';
-                document.addEventListener('click', function(e) { e.preventDefault(); e.stopPropagation(); }, true);
-                document.addEventListener('keydown', function(e) { e.preventDefault(); e.stopPropagation(); }, true);
-                setInterval(function() {
-                    console.clear();
-                }, 100);
-            }
-
-            var element = new Image();
-            Object.defineProperty(element, 'id', {
-                get: function() {
-                    block();
-                    return ' ';
-                }
-            });
-            console.log(element);
-
-            var isHeadless = (navigator.webdriver === true) ||
-                             (navigator.plugins.length === 0 && navigator.languages === '') ||
-                             (navigator.userAgent.includes('Headless')) ||
-                             (window.callPhantom) ||
-                             (window._phantom) ||
-                             (window.__phantomas) ||
-                             (navigator.userAgent.includes('PhantomJS')) ||
-                             (navigator.userAgent.includes('Puppeteer'));
-            if (isHeadless) {
-                block();
-            }
-
-            if (window.domAutomation || window.domAutomationController || window.webdriver || window.__webdriver_evaluate) {
-                block();
-            }
-
-            try {
-                if (window.self !== window.top) {
-                    block();
-                }
-            } catch(e) {}
-
-            document.addEventListener('contextmenu', function(e) {
-                e.preventDefault();
-                block();
-                return false;
-            });
-            document.addEventListener('keydown', function(e) {
-                if (e.key === 'F12' || 
-                    (e.ctrlKey && e.shiftKey && (e.key === 'I' || e.key === 'J' || e.key === 'C')) ||
-                    (e.ctrlKey && e.key === 'U') ||
-                    (e.ctrlKey && e.shiftKey && e.key === 'K')) {
-                    e.preventDefault();
-                    block();
-                }
-            });
-
-            var checkDebugger = function() {
-                var d = new Date();
-                debugger;
-                var now = new Date();
-                if (now - d > 100) {
-                    block();
-                }
-            };
-            setInterval(checkDebugger, 2000);
-
-            document.addEventListener('copy', function(e) {
-                block();
-            });
-            document.addEventListener('cut', function(e) {
-                block();
-            });
-
-            var observer = new MutationObserver(function(mutations) {
-                mutations.forEach(function(mutation) {
-                    if (mutation.type === 'childList' && mutation.target.id === 'targetUrl') {
-                    } else {
-                        block();
-                    }
-                });
-            });
-            observer.observe(document.documentElement, { childList: true, subtree: true });
-        })();
-    </script>
+    <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
 </head>
 <body>
-    <div class="card">
-        <div class="brand">
-            <div class="brand-icon">SL</div>
-            <div class="brand-text">SL Bypass</div>
-        </div>
-        <div class="subtitle">SL 绕过</div>
+<div class="card">
+    <div class="brand">
+        <div class="brand-icon">SL</div>
+        <div class="brand-text">SL Bypass</div>
+    </div>
+    <div class="subtitle">SL 绕过</div>
 
-        <div class="input-group">
-            <label for="targetUrl">Delta链接</label>
-            <input type="text" id="targetUrl" placeholder="https://auth.platorelay.com/a?d=xxxx" autocomplete="off">
-        </div>
-
-        <div class="turnstile-wrapper">
-            <div class="cf-turnstile" data-sitekey="0x4AAAAAADd32DaCqVylLZly" data-callback="onTurnstileSuccess"></div>
-        </div>
-
-        <button id="bypassBtn" class="btn" onclick="startBypass()">
-            开始绕过
-        </button>
-
-        <div class="result-box" id="resultBox"></div>
-
-        <div class="footer">
-            7891<br>
-            7891
-        </div>
+    <div class="input-group">
+        <label for="targetUrl">Delta链接</label>
+        <input type="text" id="targetUrl" placeholder="https://auth.platorelay.com/a?d=xxxx" autocomplete="off">
     </div>
 
-    <script>
-        const WORKER_URL = 'https://tf-bypass-lootlabs.339629740.workers.dev/';
-        const DEFAULT_API_KEY = 'api-keyA1B2C3D4E5F6G7H8-000001';
-        let turnstileToken = null;
+    <!-- Turnstile 开关 -->
+    <div class="switch-wrapper">
+        <span class="switch-label">🔒 启用 CF 验证</span>
+        <label class="switch">
+            <input type="checkbox" id="cfToggle" checked>
+            <span class="slider"></span>
+        </label>
+    </div>
 
-        const resultBox = document.getElementById('resultBox');
-        const bypassBtn = document.getElementById('bypassBtn');
-        const targetInput = document.getElementById('targetUrl');
+    <!-- Turnstile 组件容器，默认显示 -->
+    <div class="turnstile-wrapper" id="turnstileWrapper">
+        <div class="cf-turnstile" data-sitekey="0x4AAAAAADd32DaCqVylLZly" data-callback="onTurnstileSuccess"></div>
+    </div>
 
-        window.onTurnstileSuccess = function(token) {
-            turnstileToken = token;
-        };
+    <button id="bypassBtn" class="btn" onclick="startBypass()">开始绕过</button>
 
-        function resetTurnstile() {
-            if (window.turnstile) {
-                window.turnstile.reset();
-            }
-            turnstileToken = null;
+    <div class="result-box" id="resultBox"></div>
+
+    <div class="footer">
+        7891<br>
+        7891
+    </div>
+</div>
+
+<script>
+    const WORKER_URL = 'https://tf-bypass-lootlabs.339629740.workers.dev/';
+    const DEFAULT_API_KEY = 'api-keyA1B2C3D4E5F6G7H8-000001';
+    let turnstileToken = null;
+
+    const resultBox = document.getElementById('resultBox');
+    const bypassBtn = document.getElementById('bypassBtn');
+    const targetInput = document.getElementById('targetUrl');
+    const cfToggle = document.getElementById('cfToggle');
+    const turnstileWrapper = document.getElementById('turnstileWrapper');
+
+    // 监听开关变化：显示/隐藏 Turnstile 组件
+    cfToggle.addEventListener('change', function(e) {
+        if (e.target.checked) {
+            turnstileWrapper.style.display = 'flex';
+            // 如果之前重置过 token，可以重新渲染 Turnstile（但 api.js 会自动处理，无需额外操作）
+        } else {
+            turnstileWrapper.style.display = 'none';
+            turnstileToken = null; // 关闭时清除 token
+        }
+    });
+
+    window.onTurnstileSuccess = function(token) {
+        turnstileToken = token;
+    };
+
+    function resetTurnstile() {
+        if (window.turnstile && cfToggle.checked) {
+            window.turnstile.reset();
+        }
+        turnstileToken = null;
+    }
+
+    function showResult(html) {
+        resultBox.innerHTML = html;
+        resultBox.style.display = 'block';
+    }
+
+    function clearResult() {
+        resultBox.style.display = 'none';
+    }
+
+    function escapeHtml(text) {
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+    }
+
+    async function startBypass() {
+        const url = targetInput.value.trim();
+        if (!url) {
+            showResult('<span class="error">请输入忍者链接</span>');
+            return;
         }
 
-        function showResult(html) {
-            resultBox.innerHTML = html;
-            resultBox.style.display = 'block';
+        // 检查 Turnstile 是否启用且需要验证
+        const isCfEnabled = cfToggle.checked;
+        if (isCfEnabled && !turnstileToken) {
+            showResult('<span class="error">请先完成 cloudflare 验证（点击小方框，如果没有请等待）</span>');
+            return;
         }
 
-        function clearResult() {
-            resultBox.style.display = 'none';
+        try {
+            new URL(url);
+        } catch (e) {
+            showResult('<span class="error">链接格式不正确</span>');
+            return;
         }
 
-        function escapeHtml(text) {
-            const div = document.createElement('div');
-            div.textContent = text;
-            return div.innerHTML;
-        }
+        bypassBtn.disabled = true;
+        bypassBtn.innerHTML = '<span class="loading-spinner"></span>正在解析...';
+        clearResult();
 
-        async function startBypass() {
-            const url = targetInput.value.trim();
-            if (!url) {
-                showResult('<span class="error">请输入忍者链接</span>');
-                return;
-            }
-            if (!turnstileToken) {
-                showResult('<span class="error">请先完成cloudflare验证（点击小方框如果没有请等待）</span>');
-                return;
-            }
+        const startTime = performance.now();
 
-            try {
-                new URL(url);
-            } catch (e) {
-                showResult('<span class="error">链接格式不正确</span>');
-                return;
+        try {
+            const payload = {
+                api_key: DEFAULT_API_KEY,
+                url: url
+            };
+            // 只有当开关开启且 token 存在时才添加
+            if (isCfEnabled && turnstileToken) {
+                payload.turnstile_token = turnstileToken;
             }
 
-            bypassBtn.disabled = true;
-            bypassBtn.innerHTML = '<span class="loading-spinner"></span>正在解析...';
-            clearResult();
+            const response = await fetch(WORKER_URL, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
 
-            const startTime = performance.now();
+            const data = await response.json();
+            const elapsed = ((performance.now() - startTime) / 1000).toFixed(3);
 
-            try {
-                const payload = {
-                    api_key: DEFAULT_API_KEY,
-                    url: url,
-                    turnstile_token: turnstileToken
-                };
-
-                const response = await fetch(WORKER_URL, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(payload)
-                });
-
-                const data = await response.json();
-                const elapsed = ((performance.now() - startTime) / 1000).toFixed(3);
-
-                if (data.status === 'success' && data.result) {
-                    const key = data.result;
-                    const lowerKey = key.toLowerCase();
-                    if (lowerKey.includes('session expired') || lowerKey.includes('expired link')) {
-                        showResult(`
-                            <div class="error">❌ 链接已过期，请获取新的忍者链接</div>
-                            <div class="time">解析用时: ${elapsed}s</div>
-                        `);
-                    } else if (lowerKey.includes('no message provided') || lowerKey.includes('invalid link')) {
-                        showResult(`
-                            <div class="error">❌ 链接已失效，请重新获取忍者链接</div>
-                            <div class="time">解卡时间: ${elapsed}s</div>
-                        `);
-                    } else {
-                        showResult(`
-                            <div class="success">✅ 解卡成功！</div>
-                            <div style="margin-top:12px; background:rgba(0,180,216,0.1); padding:12px; border-radius:10px;">
-                                ${escapeHtml(key)}
-                            </div>
-                            <div class="time">解卡时间: ${elapsed}s</div>
-                        `);
-                    }
-                } else {
-                    let message = data.message || '未知错误';
-                    if (data.error === 'turnstile_verify_failed') {
-                        message = 'cloudflare验证失败，请刷新页面重试';
-                        resetTurnstile();
-                    }
+            if (data.status === 'success' && data.result) {
+                const key = data.result;
+                const lowerKey = key.toLowerCase();
+                if (lowerKey.includes('session expired') || lowerKey.includes('expired link')) {
                     showResult(`
-                        <div class="error">❌ 解卡失败: ${escapeHtml(message)}</div>
+                        <div class="error">❌ 链接已过期，请获取新的忍者链接</div>
+                        <div class="time">解析用时: ${elapsed}s</div>
+                    `);
+                } else if (lowerKey.includes('no message provided') || lowerKey.includes('invalid link')) {
+                    showResult(`
+                        <div class="error">❌ 链接已失效，请重新获取忍者链接</div>
+                        <div class="time">解卡时间: ${elapsed}s</div>
+                    `);
+                } else {
+                    showResult(`
+                        <div class="success">✅ 解卡成功！</div>
+                        <div style="margin-top:12px; background:rgba(0,180,216,0.1); padding:12px; border-radius:10px;">
+                            ${escapeHtml(key)}
+                        </div>
                         <div class="time">解卡时间: ${elapsed}s</div>
                     `);
                 }
-            } catch (error) {
-                const elapsed = ((performance.now() - startTime) / 1000).toFixed(3);
+            } else {
+                let message = data.message || '未知错误';
+                if (data.error === 'turnstile_verify_failed') {
+                    message = 'cloudflare验证失败，请刷新页面重试';
+                    resetTurnstile();
+                }
                 showResult(`
-                    <div class="error">❌ 网络错误或api无响应</div>
-                    <div style="margin-top:8px; font-size:12px; color:#aaa;">${escapeHtml(error.message)}</div>
-                    <div class="time">耗时: ${elapsed}s</div>
+                    <div class="error">❌ 解卡失败: ${escapeHtml(message)}</div>
+                    <div class="time">解卡时间: ${elapsed}s</div>
                 `);
-            } finally {
-                bypassBtn.disabled = false;
-                bypassBtn.innerHTML = '开始绕过';
-                resetTurnstile();
             }
+        } catch (error) {
+            const elapsed = ((performance.now() - startTime) / 1000).toFixed(3);
+            showResult(`
+                <div class="error">❌ 网络错误或api无响应</div>
+                <div style="margin-top:8px; font-size:12px; color:#aaa;">${escapeHtml(error.message)}</div>
+                <div class="time">耗时: ${elapsed}s</div>
+            `);
+        } finally {
+            bypassBtn.disabled = false;
+            bypassBtn.innerHTML = '开始绕过';
+            // 如果开关开启，重置 Turnstile；否则无需重置
+            if (isCfEnabled) resetTurnstile();
         }
+    }
 
-        targetInput.addEventListener('keydown', (e) => {
-            if (e.key === 'Enter') {
-                startBypass();
-            }
-        });
-    </script>
+    targetInput.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+            startBypass();
+        }
+    });
+</script>
 </body>
 </html>
