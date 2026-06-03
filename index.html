@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes">
-    <title>SL Bypass</title>
+    <title>SL Bypass · Turnstile 防护</title>
     <style>
         * {
             margin: 0;
@@ -175,6 +175,22 @@
             align-items: center;
             justify-content: center;
         }
+        .debug-box {
+            background: #1e1e2a;
+            border-left: 4px solid #ff6b6b;
+            padding: 10px;
+            margin: 15px 0;
+            font-size: 12px;
+            text-align: left;
+            font-family: monospace;
+            color: #ffb86c;
+            border-radius: 8px;
+            word-break: break-word;
+        }
+        .debug-box.success {
+            border-left-color: #4caf50;
+            color: #a5d6a7;
+        }
     </style>
     <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
 </head>
@@ -194,6 +210,9 @@
         <div class="turnstile-wrapper">
             <div class="cf-turnstile" data-sitekey="0x4AAAAAADdoklioyz3Flc1KFxVdNTAR8oQ" data-callback="onTurnstileSuccess"></div>
         </div>
+
+        <!-- 🔍 调试信息框，会显示具体错误 -->
+        <div id="turnstileDebug" class="debug-box">🔍 正在检测 Turnstile 状态...</div>
 
         <button id="bypassBtn" class="btn" onclick="startBypass()">
             开始绕过
@@ -215,14 +234,23 @@
         const resultBox = document.getElementById('resultBox');
         const bypassBtn = document.getElementById('bypassBtn');
         const targetInput = document.getElementById('targetUrl');
+        const debugDiv = document.getElementById('turnstileDebug');
+
+        function debugLog(msg, isError = false) {
+            const color = isError ? '#ff6b6b' : '#a5d6a7';
+            debugDiv.innerHTML += `<div style="color:${color}; margin-top:4px;">${msg}</div>`;
+            console.log(msg);
+        }
 
         window.onTurnstileSuccess = function(token) {
             turnstileToken = token;
+            debugLog('✅ Turnstile 验证成功，已获取 token', false);
         };
 
         function resetTurnstile() {
             if (window.turnstile) {
                 window.turnstile.reset();
+                debugLog('🔄 已重置 Turnstile 组件');
             }
             turnstileToken = null;
         }
@@ -307,7 +335,7 @@
                 } else {
                     let message = data.message || '未知错误';
                     if (data.error === 'turnstile_verify_failed') {
-                        message = '验证失败，请刷新页面重试';
+                        message = 'Turnstile 验证失败，请刷新页面重试';
                         resetTurnstile();
                     }
                     showResult(`
@@ -334,6 +362,83 @@
                 startBypass();
             }
         });
+
+        // ========== 详细诊断 Turnstile 为什么没显示 ==========
+        (function diagnoseTurnstile() {
+            debugDiv.innerHTML = '🔍 Turnstile 诊断报告 (自动生成)<br>';
+
+            // 1. 检查 DOM 元素是否存在
+            const turnstileDiv = document.querySelector('.cf-turnstile');
+            if (!turnstileDiv) {
+                debugLog('❌ 严重错误：找不到 class="cf-turnstile" 的 div 元素', true);
+                return;
+            }
+            debugLog('✅ 找到 Turnstile 容器元素');
+
+            // 2. 检查 sitekey 属性
+            const sitekey = turnstileDiv.getAttribute('data-sitekey');
+            if (!sitekey) {
+                debugLog('❌ data-sitekey 属性缺失', true);
+            } else {
+                debugLog(`✅ data-sitekey = ${sitekey}`);
+                if (sitekey !== '0x4AAAAAADdoklioyz3Flc1KFxVdNTAR8oQ') {
+                    debugLog(`⚠️ 警告：站点密钥与预期不符，预期 0x4AAAAAADdoklioyz3Flc1KFxVdNTAR8oQ，实际 ${sitekey}`, true);
+                }
+            }
+
+            // 3. 检查 Turnstile 脚本是否加载
+            if (typeof turnstile === 'undefined') {
+                debugLog('❌ Turnstile 对象 (window.turnstile) 未定义！脚本可能未加载或加载失败', true);
+                debugLog('   请手动访问 https://challenges.cloudflare.com/turnstile/v0/api.js 看是否能下载', true);
+                return;
+            }
+            debugLog('✅ Turnstile 脚本已加载，对象存在');
+
+            // 4. 尝试手动调用渲染方法，并捕获详细错误
+            try {
+                debugLog('🔄 尝试手动执行 turnstile.render()...');
+                turnstile.render('.cf-turnstile', {
+                    sitekey: sitekey,
+                    callback: function(token) {
+                        debugLog(`✅ 手动渲染成功，回调收到 token: ${token.substring(0,10)}...`);
+                        turnstileToken = token;
+                    },
+                    'error-callback': function(err) {
+                        debugLog(`❌ Turnstile 渲染错误回调: ${JSON.stringify(err)}`, true);
+                    }
+                });
+                debugLog('✅ turnstile.render() 已调用，未抛出异常');
+            } catch (renderErr) {
+                debugLog(`❌ turnstile.render() 抛出异常: ${renderErr.message}`, true);
+                debugLog(`   堆栈: ${renderErr.stack}`, true);
+            }
+
+            // 5. 检查是否有任何全局 JS 错误（通过监听 error 事件）
+            window.addEventListener('error', function(jsErr) {
+                debugLog(`🚨 捕获到全局 JS 错误: ${jsErr.message} at ${jsErr.filename}:${jsErr.lineno}`, true);
+            });
+
+            // 6. 检查当前域名是否被 Turnstile 白名单允许（间接测试）
+            const currentHost = window.location.hostname;
+            debugLog(`🌐 当前页面域名: ${currentHost}`);
+            if (currentHost !== '466481545451.github.io') {
+                debugLog(`⚠️ 当前域名不是预期的 466481545451.github.io，请确认 Turnstile 后台是否添加了此域名`, true);
+            } else {
+                debugLog(`✅ 域名匹配，请确保 Turnstile 后台 Hostname management 中包含 ${currentHost}`);
+            }
+
+            // 7. 检测是否因为之前渲染失败导致组件不显示（再给一次机会）
+            setTimeout(() => {
+                const widgetDiv = document.querySelector('.cf-turnstile iframe');
+                if (widgetDiv) {
+                    debugLog('🎉 Turnstile 组件已成功显示（iframe 已注入）', false);
+                    debugDiv.classList.add('success');
+                } else {
+                    debugLog('❌ 经过 3 秒仍未检测到 Turnstile iframe，组件可能没有渲染', true);
+                    debugLog('   可能原因：sitekey 无效、域名未授权、或被浏览器扩展拦截', true);
+                }
+            }, 3000);
+        })();
     </script>
 </body>
 </html>
