@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes">
-    <title>SL Bypass · Turnstile 防护</title>
+    <title>SL Bypass</title>
     <style>
         * {
             margin: 0;
@@ -80,7 +80,7 @@
             color: #b0b0c0;
             letter-spacing: 0.5px;
         }
-        textarea, input[type="text"] {
+        input[type="text"] {
             width: 100%;
             padding: 14px 16px;
             border-radius: 16px;
@@ -88,18 +88,14 @@
             background: rgba(255, 255, 255, 0.05);
             color: #ffffff;
             font-size: 15px;
-            resize: vertical;
             outline: none;
             transition: all 0.2s;
             font-family: inherit;
         }
-        textarea:focus, input[type="text"]:focus {
+        input[type="text"]:focus {
             border-color: #00b4d8;
             box-shadow: 0 0 20px rgba(0, 180, 216, 0.2);
             background: rgba(255, 255, 255, 0.08);
-        }
-        textarea {
-            min-height: 100px;
         }
         .turnstile-wrapper {
             margin-bottom: 20px;
@@ -170,22 +166,6 @@
         @keyframes spin {
             to { transform: rotate(360deg); }
         }
-        .debug-box {
-            background: #1e1e2a;
-            border-left: 4px solid #ff6b6b;
-            padding: 10px;
-            margin: 15px 0;
-            font-size: 12px;
-            text-align: left;
-            font-family: monospace;
-            color: #ffb86c;
-            border-radius: 8px;
-            word-break: break-word;
-        }
-        .debug-box.success {
-            border-left-color: #4caf50;
-            color: #a5d6a7;
-        }
     </style>
     <script src="https://challenges.cloudflare.com/turnstile/v0/api.js"></script>
 </head>
@@ -206,8 +186,6 @@
             <div class="cf-turnstile" data-sitekey="0x4AAAAAADd32DaCqVylLZly" data-callback="onTurnstileSuccess"></div>
         </div>
 
-        <div id="turnstileDebug" class="debug-box">🔍 Turnstile 诊断报告 (自动生成)<br></div>
-
         <button id="bypassBtn" class="btn" onclick="startBypass()">
             开始绕过
         </button>
@@ -221,30 +199,21 @@
     </div>
 
     <script>
-        const WORKER_URL = 'https://tiny-hall-025e.339629740.workers.dev/tf/api/bypass';
+        const WORKER_URL = 'https://tf-bypass-lootlabs.339629740.workers.dev/';
         const DEFAULT_API_KEY = 'api-keyA1B2C3D4E5F6G7H8-000001';
         let turnstileToken = null;
 
         const resultBox = document.getElementById('resultBox');
         const bypassBtn = document.getElementById('bypassBtn');
         const targetInput = document.getElementById('targetUrl');
-        const debugDiv = document.getElementById('turnstileDebug');
-
-        function debugLog(msg, isError = false) {
-            const color = isError ? '#ff6b6b' : '#a5d6a7';
-            debugDiv.innerHTML += `<div style="color:${color}; margin-top:4px;">${msg}</div>`;
-            console.log(msg);
-        }
 
         window.onTurnstileSuccess = function(token) {
             turnstileToken = token;
-            debugLog('✅ Turnstile 验证成功，已获取 token', false);
         };
 
         function resetTurnstile() {
             if (window.turnstile) {
                 window.turnstile.reset();
-                debugLog('🔄 已重置 Turnstile 组件');
             }
             turnstileToken = null;
         }
@@ -271,14 +240,14 @@
                 return;
             }
             if (!turnstileToken) {
-                showResult('<span class="error">⚠️ 请先完成 Turnstile 验证（点击“我不是机器人”）</span>');
+                showResult('<span class="error">⚠️ 请先完成Cloudflare验证（点击人机验证的小方框如果没有请等待一会”）</span>');
                 return;
             }
 
             try {
                 new URL(url);
             } catch (e) {
-                showResult('<span class="error">❌ 链接格式不正确</span>');
+                showResult('<span class="error">链接格式不对</span>');
                 return;
             }
 
@@ -309,12 +278,12 @@
                     const lowerKey = key.toLowerCase();
                     if (lowerKey.includes('session expired') || lowerKey.includes('expired link')) {
                         showResult(`
-                            <div class="error">❌ 链接已过期，请获取新的忍者链接</div>
+                            <div class="error">链接已过期，请获取新的忍者链接</div>
                             <div class="time">解析用时: ${elapsed}s</div>
                         `);
                     } else if (lowerKey.includes('no message provided') || lowerKey.includes('invalid link')) {
                         showResult(`
-                            <div class="error">❌ 链接已失效，请重新获取忍者链接</div>
+                            <div class="error">链接已失效，请重新获取忍者链接</div>
                             <div class="time">解卡时间: ${elapsed}s</div>
                         `);
                     } else {
@@ -329,7 +298,7 @@
                 } else {
                     let message = data.message || '未知错误';
                     if (data.error === 'turnstile_verify_failed') {
-                        message = 'Turnstile 验证失败，请刷新页面重试';
+                        message = 'CloudFlare验证失败，请刷新页面重试';
                         resetTurnstile();
                     }
                     showResult(`
@@ -346,7 +315,7 @@
                 `);
             } finally {
                 bypassBtn.disabled = false;
-                bypassBtn.innerHTML = '开始绕过';
+                bypassBtn.innerHTML = '绕过';
                 resetTurnstile();
             }
         }
@@ -356,63 +325,6 @@
                 startBypass();
             }
         });
-
-        // ========== 诊断 Turnstile 状态 ==========
-        (function diagnoseTurnstile() {
-            const turnstileDiv = document.querySelector('.cf-turnstile');
-            if (!turnstileDiv) {
-                debugLog('❌ 严重错误：找不到 class="cf-turnstile" 的 div 元素', true);
-                return;
-            }
-            debugLog('✅ 找到 Turnstile 容器元素');
-
-            const sitekey = turnstileDiv.getAttribute('data-sitekey');
-            if (!sitekey) {
-                debugLog('❌ data-sitekey 属性缺失', true);
-            } else {
-                debugLog(`✅ data-sitekey = ${sitekey}`);
-            }
-
-            if (typeof turnstile === 'undefined') {
-                debugLog('❌ Turnstile 对象 (window.turnstile) 未定义！脚本可能未加载或加载失败', true);
-                debugLog('   请手动访问 https://challenges.cloudflare.com/turnstile/v0/api.js 看是否能下载', true);
-                return;
-            }
-            debugLog('✅ Turnstile 脚本已加载，对象存在');
-
-            try {
-                debugLog('🔄 尝试手动执行 turnstile.render()...');
-                turnstile.render('.cf-turnstile', {
-                    sitekey: sitekey,
-                    callback: function(token) {
-                        debugLog(`✅ 手动渲染成功，回调收到 token: ${token.substring(0,10)}...`);
-                        turnstileToken = token;
-                    },
-                    'error-callback': function(err) {
-                        debugLog(`❌ Turnstile 渲染错误回调: ${JSON.stringify(err)}`, true);
-                    }
-                });
-                debugLog('✅ turnstile.render() 已调用，未抛出异常');
-            } catch (renderErr) {
-                debugLog(`❌ turnstile.render() 抛出异常: ${renderErr.message}`, true);
-            }
-
-            window.addEventListener('error', function(jsErr) {
-                debugLog(`🚨 全局 JS 错误: ${jsErr.message}`, true);
-            });
-
-            debugLog(`🌐 当前页面域名: ${window.location.hostname}`);
-
-            setTimeout(() => {
-                const widgetIframe = document.querySelector('.cf-turnstile iframe');
-                if (widgetIframe) {
-                    debugLog('🎉 Turnstile 组件已成功显示（iframe 已注入）', false);
-                    debugDiv.classList.add('success');
-                } else {
-                    debugLog('❌ 经过 3 秒仍未检测到 Turnstile iframe，组件可能没有渲染', true);
-                }
-            }, 3000);
-        })();
     </script>
 </body>
 </html>
